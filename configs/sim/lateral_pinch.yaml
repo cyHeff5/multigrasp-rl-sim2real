@@ -16,7 +16,7 @@ world:
   spawn_on_pedestal: true
   pedestal_height_m: 0.05
   pedestal_half_extents_xy: [0.08, 0.08]
-  pedestal_position_xy: [0.40, 0.00]
+  pedestal_position_xy: [0.60, 0.00]
 max_steps: 180
 frame_skip: 4
 action_scale: 0.04
@@ -37,6 +37,6 @@ object_sampler:
     min: 0.25
     max: 0.70
 spawn:
-  position_xyz: [0.40, 0.00, 0.04]
+  position_xyz: [0.60, 0.00, 0.04]
   jitter_xyz: [0.001, 0.001, 0.005]
   yaw_range_deg: [-180, 180]

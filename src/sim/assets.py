@@ -1,9 +1,8 @@
 ﻿from pathlib import Path
 
 
-_HERE = Path(__file__).resolve().parents[2]
-LEGACY_SIM_DIR = _HERE / "sim"
-ASSETS_DIR = LEGACY_SIM_DIR / "assets"
+_HERE = Path(__file__).resolve().parent
+ASSETS_DIR = _HERE / "assets"
 
 UR5_DIR = ASSETS_DIR / "ur5"
 UR5_URDF = UR5_DIR / "ur5.urdf"

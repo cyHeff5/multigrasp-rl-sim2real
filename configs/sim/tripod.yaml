@@ -5,14 +5,14 @@ action: delta_q_target
 world:
   gui: false
   robot_type: free_hand
-  free_hand_pregrasp_position_xyz: [0.40, 0.00, 0.12]
+  free_hand_pregrasp_position_xyz: [0.60, 0.00, 0.12]
   free_hand_pregrasp_rpy_deg: [90.0, 0.0, 90.0]
   free_hand_constraint_force: 3000.0
   spawn_on_pedestal: true
   pedestal_height_m: 0.04
   pedestal_shape: cylinder
   pedestal_diameter_m: 0.04
-  pedestal_position_xy: [0.40, 0.00]
+  pedestal_position_xy: [0.60, 0.00]
 max_steps: 200
 frame_skip: 4
 action_scale: 0.05
@@ -42,6 +42,6 @@ object_sampler:
     max: 0.20
   lateral_friction: 0.40
 spawn:
-  position_xyz: [0.40, 0.00, 0.04]
+  position_xyz: [0.60, 0.00, 0.04]
   jitter_xyz: [0.001, 0.001, 0.005]
   yaw_range_deg: [-180, 180]

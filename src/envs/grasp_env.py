@@ -41,8 +41,8 @@ class GraspEnv(GraspEnvBase):
             pedestal_shape=str(world_cfg.get("pedestal_shape", "box")),
             pedestal_diameter_m=float(world_cfg.get("pedestal_diameter_m", 0.04)),
             pedestal_half_extents_xy=tuple(world_cfg.get("pedestal_half_extents_xy", [0.08, 0.08])),
-            pedestal_position_xy=tuple(world_cfg.get("pedestal_position_xy", [0.40, 0.00])),
-            free_hand_pregrasp_position_xyz=tuple(world_cfg.get("free_hand_pregrasp_position_xyz", [0.40, 0.00, 0.12])),
+            pedestal_position_xy=tuple(world_cfg.get("pedestal_position_xy", [0.60, 0.00])),
+            free_hand_pregrasp_position_xyz=tuple(world_cfg.get("free_hand_pregrasp_position_xyz", [0.60, 0.00, 0.12])),
             free_hand_pregrasp_rpy_deg=tuple(world_cfg.get("free_hand_pregrasp_rpy_deg", [90.0, 0.0, 90.0])),
             free_hand_constraint_force=float(world_cfg.get("free_hand_constraint_force", 3000.0)),
             robot_base_rpy_deg=tuple(world_cfg.get("robot_base_rpy_deg", [0.0, 0.0, 0.0])),
@@ -511,6 +511,113 @@ class GraspEnv(GraspEnvBase):
             "tangent_world": [float(v) for v in t_world],
         }
         return hand_base_world, hand_quat_world, debug
+
+    def _pregrasp_from_aabb_top(self) -> dict[str, Any]:
+        """Compute pregrasp pose using the AABB top-center of the current object."""
+        aabb_min, aabb_max = p.getAABB(self.object_id, -1)
+        gp_world = [
+            0.5 * (float(aabb_min[0]) + float(aabb_max[0])),
+            0.5 * (float(aabb_min[1]) + float(aabb_max[1])),
+            float(aabb_max[2]),
+        ]
+        n_world = self._normalize([0.0, 0.0, 1.0])
+        t_world = self._orthonormal_tangent(n_world, [1.0, 0.0, 0.0])
+
+        if abs(float(self.pregrasp_twist_deg)) > 1e-9:
+            t_world = self._orthonormal_tangent(
+                n_world,
+                self._rotate_about_axis(t_world, n_world, math.radians(float(self.pregrasp_twist_deg))),
+            )
+
+        d_m = float(self.pregrasp_distance_mm) / 1000.0
+        target_ref_world = [
+            float(gp_world[0] + d_m * n_world[0]),
+            float(gp_world[1] + d_m * n_world[1]),
+            float(gp_world[2] + d_m * n_world[2]),
+        ]
+
+        p_hand = [float(v) for v in self.pregrasp_hand_ref["position_hand_xyz"]]
+        n_hand = self._normalize([float(v) for v in self.pregrasp_hand_ref["normal_hand_xyz"]])
+        t_hand = self._orthonormal_tangent(n_hand, [float(v) for v in self.pregrasp_hand_ref["tangent_hand_xyz"]])
+        b_hand = self._normalize(self._cross(n_hand, t_hand))
+        t_hand = self._normalize(self._cross(b_hand, n_hand))
+
+        n_target = [-n_world[0], -n_world[1], -n_world[2]]
+        t_target = self._orthonormal_tangent(n_target, t_world)
+        b_target = self._normalize(self._cross(n_target, t_target))
+        t_target = self._normalize(self._cross(b_target, n_target))
+
+        r_world_target = self._mat_from_basis(t_target, b_target, n_target)
+        r_hand_local = self._mat_from_basis(t_hand, b_hand, n_hand)
+        r_hand_world = self._mat_mul(r_world_target, self._mat_transpose(r_hand_local))
+        hand_quat_world = self._quat_from_basis(
+            [r_hand_world[0][0], r_hand_world[1][0], r_hand_world[2][0]],
+            [r_hand_world[0][1], r_hand_world[1][1], r_hand_world[2][1]],
+            [r_hand_world[0][2], r_hand_world[1][2], r_hand_world[2][2]],
+        )
+        hand_offset_world = self._mat_vec_mul(r_hand_world, p_hand)
+        hand_base_world = [
+            float(target_ref_world[0] - hand_offset_world[0]),
+            float(target_ref_world[1] - hand_offset_world[1]),
+            float(target_ref_world[2] - hand_offset_world[2]),
+        ]
+        return {
+            "grasp_type": str(self.grasp_type),
+            "distance_mm": float(self.pregrasp_distance_mm),
+            "twist_deg": float(self.pregrasp_twist_deg),
+            "target_ref_world": [float(v) for v in target_ref_world],
+            "hand_base_world": [float(v) for v in hand_base_world],
+            "hand_quat_world": [float(v) for v in hand_quat_world],
+            "normal_world": [float(v) for v in n_world],
+            "tangent_world": [float(v) for v in t_world],
+        }
+
+    def reset_benchmark(self, part_id: int) -> tuple[np.ndarray, dict]:
+        """Like reset(), but spawns a benchmark URDF part with AABB-based grasp point."""
+        super().reset(seed=None)
+
+        self.world.reset()
+        self.world.hand.reset_open_pose()
+        self.lift_check_link_indices = self.world.hand.get_contact_link_indices(
+            mode=self.lift_check_contact_mode,
+            link_names=self.lift_check_contact_link_names,
+        )
+
+        self.object_id = self.world.spawn_benchmark_object(part_id)
+        self.world.disable_pregrasp_collisions_temporarily(
+            object_id=self.object_id,
+            steps=self.pregrasp_no_collision_steps,
+        )
+        self.last_pregrasp = self._pregrasp_from_aabb_top()
+        if self.world.robot_type == "free_hand":
+            self.world.set_free_hand_pose(
+                self.last_pregrasp["hand_base_world"],
+                self.last_pregrasp["hand_quat_world"],
+            )
+        if self.pregrasp_settle_steps > 0:
+            self.world.step(self.pregrasp_settle_steps)
+        self.world.wait_until_pregrasp_collisions_restored()
+
+        pos, _ = p.getBasePositionAndOrientation(self.object_id)
+        self.last_obj_pos = pos
+        self.object_start_z = float(pos[2])
+        self.step_count = 0
+        self.lift_check_done = False
+        self.lift_check_lifted = False
+        self.lift_check_delta_z = 0.0
+        self.phase = "close"
+        self.episode_reward_sum = 0.0
+        self.episode_reward_terms = {}
+
+        obs = self._build_observation()
+        info = {
+            "part_id": int(part_id),
+            "q_target": self.world.hand.get_q_target(),
+            "q_measured": self.world.hand.get_q_measured(),
+            "obs_delta": obs.tolist(),
+            "pregrasp": dict(self.last_pregrasp),
+        }
+        return obs, info
 
     def _place_hand_to_pregrasp(self, obj_spec: dict) -> dict[str, Any]:
         hand_pos, hand_quat, debug = self._compute_pregrasp_pose(obj_spec)

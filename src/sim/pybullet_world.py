@@ -31,10 +31,11 @@ class PyBulletWorld:
         pedestal_shape: str = "box",
         pedestal_diameter_m: float = 0.04,
         pedestal_half_extents_xy: tuple[float, float] = (0.08, 0.08),
-        pedestal_position_xy: tuple[float, float] = (0.40, 0.00),
-        free_hand_pregrasp_position_xyz: tuple[float, float, float] = (0.40, 0.00, 0.12),
+        pedestal_position_xy: tuple[float, float] = (0.60, 0.00),
+        free_hand_pregrasp_position_xyz: tuple[float, float, float] = (0.60, 0.00, 0.12),
         free_hand_pregrasp_rpy_deg: tuple[float, float, float] = (90.0, 0.0, 90.0),
         free_hand_constraint_force: float = 3000.0,
+        robot_base_position_xyz: tuple[float, float, float] = (0.0, 0.0, 0.0),
         robot_base_rpy_deg: tuple[float, float, float] = (0.0, 0.0, 0.0),
     ):
         self.gui = bool(gui)
@@ -71,6 +72,11 @@ class PyBulletWorld:
             float(free_hand_pregrasp_rpy_deg[2]),
         )
         self.free_hand_constraint_force = float(free_hand_constraint_force)
+        self.robot_base_position_xyz = (
+            float(robot_base_position_xyz[0]),
+            float(robot_base_position_xyz[1]),
+            float(robot_base_position_xyz[2]),
+        )
         self.robot_base_rpy_deg = (
             float(robot_base_rpy_deg[0]),
             float(robot_base_rpy_deg[1]),
@@ -126,7 +132,7 @@ class PyBulletWorld:
             if self.robot_type == "sawyer":
                 self.robot_id = p.loadURDF(
                     str(SAWYER_URDF),
-                    basePosition=[0, 0, 0],
+                    basePosition=list(self.robot_base_position_xyz),
                     baseOrientation=robot_base_quat,
                     useFixedBase=True,
                 )
@@ -135,7 +141,7 @@ class PyBulletWorld:
             elif self.robot_type == "ur5":
                 self.robot_id = p.loadURDF(
                     str(UR5_URDF),
-                    basePosition=[0, 0, 0],
+                    basePosition=list(self.robot_base_position_xyz),
                     baseOrientation=robot_base_quat,
                     useFixedBase=True,
                 )
@@ -317,6 +323,18 @@ class PyBulletWorld:
         self._pregrasp_disabled_pairs = []
         self._pregrasp_collision_object_id = None
 
+    def set_hand_object_collision(self, object_id: int, enabled: bool) -> None:
+        """Enable or disable all collisions between the hand and a given object."""
+        if self.hand_id is None:
+            return
+        self._set_collision_enabled_between_bodies(self.hand_id, int(object_id), enabled)
+
+    def set_arm_object_collision(self, object_id: int, enabled: bool) -> None:
+        """Enable or disable all collisions between the arm and a given object."""
+        if self.robot_id is None:
+            return
+        self._set_collision_enabled_between_bodies(self.robot_id, int(object_id), enabled)
+
     def wait_until_pregrasp_collisions_restored(self, max_steps: int | None = None) -> None:
         """Block until temporary pregrasp collision disabling has fully ended."""
         if self._pregrasp_collision_steps_left <= 0:
@@ -382,6 +400,43 @@ class PyBulletWorld:
             frictionAnchor=True,
         )
         return self.object_id
+
+    def spawn_benchmark_object(self, part_id: int) -> int:
+        """Load a benchmark URDF part and place it on the pedestal (or floor).
+
+        Uses AABB after loading to reposition the object so its bottom sits
+        exactly at the pedestal surface (pedestal_height_m if spawn_on_pedestal,
+        else 0.0).
+        """
+        from src.sim.assets import benchmark_part_urdf
+        x = self.pedestal_position_xy[0]
+        y = self.pedestal_position_xy[1]
+        z_surface = self.pedestal_height_m if self.spawn_on_pedestal else 0.0
+
+        obj_id = p.loadURDF(
+            str(benchmark_part_urdf(part_id)),
+            basePosition=[x, y, z_surface + 0.5],
+            baseOrientation=[0.0, 0.0, 0.0, 1.0],
+            useFixedBase=False,
+        )
+        # Reposition so AABB bottom sits exactly on the surface.
+        aabb_min, _ = p.getAABB(obj_id, -1)
+        cur_pos, cur_quat = p.getBasePositionAndOrientation(obj_id)
+        shift_z = float(z_surface) - float(aabb_min[2])
+        p.resetBasePositionAndOrientation(
+            obj_id,
+            [float(cur_pos[0]), float(cur_pos[1]), float(cur_pos[2]) + shift_z],
+            cur_quat,
+        )
+        p.changeDynamics(
+            obj_id, -1,
+            lateralFriction=0.4,
+            spinningFriction=0.001,
+            rollingFriction=0.0005,
+            frictionAnchor=True,
+        )
+        self.object_id = obj_id
+        return obj_id
 
     def _spawn_pedestal(self) -> None:
         half_z = self.pedestal_height_m * 0.5

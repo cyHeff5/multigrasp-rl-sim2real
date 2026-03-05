@@ -29,16 +29,19 @@ _SIM_CONFIG = {
     "world": {
         "gui": True,
         "robot_type": "sawyer",
+        # Real setup: Sawyer base is on the floor, table is 70 cm high.
+        # z=0 in sim = table surface. Sawyer base goes at z=-0.70.
+        "robot_base_position_xyz": [0.0, 0.0, -0.70],
         "robot_base_rpy_deg": [0.0, 0.0, 270.0],
         "spawn_on_pedestal": True,
         "pedestal_height_m": 0.04,
         "pedestal_shape": "cylinder",
         "pedestal_diameter_m": 0.04,
-        "pedestal_position_xy": [0.40, 0.00],
+        "pedestal_position_xy": [0.80, 0.00],
     },
     "pregrasp_hand_reference_yaml": "artifacts/hand_reference_points.yaml",
     "pregrasp_distance_mm": 40.0,
-    "pregrasp_twist_deg": 0.0,
+    "pregrasp_twist_deg": 270.0,
     "pregrasp_settle_steps": 0,
     "pregrasp_no_collision_steps": 150,
     "action_scale": 0.05,
@@ -56,7 +59,7 @@ _SIM_CONFIG = {
         "lateral_friction": 0.4,
     },
     "spawn": {
-        "position_xyz": [0.40, 0.00, 0.04],
+        "position_xyz": [0.80, 0.00, 0.04],
         "jitter_xyz": [0.001, 0.001, 0.0],
         "yaw_range_deg": [-180.0, 180.0],
     },
@@ -135,7 +138,15 @@ def _poll_keyboard(pygame) -> tuple[bool, bool, bool]:
     return do_reset, do_alt_ik, do_quit
 
 
-def run(cfg: dict, hz: float, move_seconds: float) -> None:
+def _disable_object_collisions(env: GraspEnv) -> None:
+    """Permanently disable hand and arm collisions with the current object."""
+    if env.world.object_id is None:
+        return
+    env.world.set_hand_object_collision(env.world.object_id, False)
+    env.world.set_arm_object_collision(env.world.object_id, False)
+
+
+def run(cfg: dict, hz: float, move_seconds: float, part_id: int | None = None) -> None:
     try:
         import pygame
     except Exception as exc:
@@ -158,8 +169,13 @@ def run(cfg: dict, hz: float, move_seconds: float) -> None:
         print("No gamepad found — using keyboard.")
         print("Controls:  R=reset  I=alt IK  Q/Escape=quit")
 
-    obs, info = env.reset()
-    print(f"reset_done shape={info.get('shape')} size_cm={info.get('size_cm'):.2f}")
+    if part_id is not None:
+        obs, info = env.reset_benchmark(part_id)
+        print(f"reset_done benchmark part_id={info.get('part_id')}")
+    else:
+        obs, info = env.reset()
+        print(f"reset_done shape={info.get('shape')} size_cm={info.get('size_cm', 0.0):.2f}")
+    _disable_object_collisions(env)
     _move_to_pregrasp(env, move_seconds)
 
     dt = 1.0 / max(1.0, float(hz))
@@ -178,8 +194,13 @@ def run(cfg: dict, hz: float, move_seconds: float) -> None:
                 break
 
             if do_reset and not reset_latch:
-                obs, info = env.reset()
-                print(f"reset_done shape={info.get('shape')} size_cm={info.get('size_cm'):.2f}")
+                if part_id is not None:
+                    obs, info = env.reset_benchmark(part_id)
+                    print(f"reset_done benchmark part_id={info.get('part_id')}")
+                else:
+                    obs, info = env.reset()
+                    print(f"reset_done shape={info.get('shape')} size_cm={info.get('size_cm', 0.0):.2f}")
+                _disable_object_collisions(env)
                 _move_to_pregrasp(env, move_seconds)
 
             if do_alt_ik and not alt_ik_latch:
@@ -203,13 +224,14 @@ def main() -> None:
     parser.add_argument("--hz", type=float, default=60.0)
     parser.add_argument("--move-seconds", type=float, default=2.0, help="Duration of arm movement to pregrasp")
     parser.add_argument("--grasp-type", type=str, default=None, help="Override grasp type (e.g. tripod, medium_wrap)")
+    parser.add_argument("--part-id", type=int, default=None, help="Benchmark part id (1..14). If set, spawns this part instead of a random object.")
     args = parser.parse_args()
 
     cfg = dict(_SIM_CONFIG)
     if args.grasp_type is not None:
         cfg["grasp_type"] = args.grasp_type
 
-    run(cfg=cfg, hz=args.hz, move_seconds=args.move_seconds)
+    run(cfg=cfg, hz=args.hz, move_seconds=args.move_seconds, part_id=args.part_id)
 
 
 if __name__ == "__main__":
