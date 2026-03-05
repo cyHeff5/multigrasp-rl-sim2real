@@ -1,0 +1,42 @@
+﻿name: lateral_pinch_env
+grasp_type: lateral_pinch
+observation: q_measured
+action: delta_q_target
+world:
+  gui: false
+  robot_type: sawyer
+  arm_pregrasp_joint_positions: [-0.1999951187, -1.4499887656, -0.0399761496, 1.3400699248, -1.5200616959, 1.1699913836, 3.2498732514]
+  arm_pregrasp_settle_steps: 20
+  arm_hold_soft_steps: 30
+  arm_hold_soft_gain: 0.03
+  arm_hold_soft_force: 250.0
+  arm_hold_gain: 0.05
+  arm_hold_force: 250.0
+  arm_hold_velocity_gain: 1.0
+  spawn_on_pedestal: true
+  pedestal_height_m: 0.05
+  pedestal_half_extents_xy: [0.08, 0.08]
+  pedestal_position_xy: [0.40, 0.00]
+max_steps: 180
+frame_skip: 4
+action_scale: 0.04
+pregrasp_no_collision_steps: 150
+lift_success_z: 0.025
+overgrip_threshold: 0.90
+overgrip_penalty: 0.20
+max_tilt_rad: 0.8
+object_sampler:
+  shapes: [cube, cylinder]
+  size_cm:
+    min: 1.5
+    max: 4.0
+  mass_kg:
+    min: 0.02
+    max: 0.12
+  lateral_friction:
+    min: 0.25
+    max: 0.70
+spawn:
+  position_xyz: [0.40, 0.00, 0.04]
+  jitter_xyz: [0.001, 0.001, 0.005]
+  yaw_range_deg: [-180, 180]

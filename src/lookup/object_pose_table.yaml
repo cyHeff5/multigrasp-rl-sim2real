@@ -1,0 +1,6 @@
+﻿objects:
+  - object_id: demo_object_01
+    grasp_points:
+      - grasp_point_id: gp01
+        pre_grasp_xyz: [0.40, 0.00, 0.20]
+        grasp_types: [tripod, medium_wrap]

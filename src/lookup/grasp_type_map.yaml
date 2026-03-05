@@ -1,0 +1,4 @@
+﻿grasp_type_map:
+  tripod: artifacts/models/tripod_latest.pt
+  medium_wrap: artifacts/models/medium_wrap_latest.pt
+  lateral_pinch: artifacts/models/lateral_pinch_latest.pt

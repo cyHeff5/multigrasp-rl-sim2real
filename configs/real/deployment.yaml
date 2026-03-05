@@ -1,0 +1,3 @@
+﻿policy_checkpoint: artifacts/models/tripod_latest.pt
+grasp_type: tripod
+frame_stack: 4

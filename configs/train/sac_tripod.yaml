@@ -1,0 +1,6 @@
+﻿algorithm: sac
+grasp_type: tripod
+total_steps: 200000
+seed: 42
+frame_stack: 4
+action_scale: 0.05

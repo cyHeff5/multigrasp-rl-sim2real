@@ -1,0 +1,64 @@
+﻿name: medium_wrap_env
+grasp_type: medium_wrap
+observation: q_measured
+action: delta_q_target
+world:
+  gui: false
+  robot_type: sawyer
+  arm_pregrasp_joint_positions: [-0.117928, 0.10712, 0.767561, 1.701272, -1.862954, 2.365099, 0.174982]
+  arm_pregrasp_settle_steps: 20
+  arm_hold_soft_steps: 30
+  arm_hold_soft_gain: 0.03
+  arm_hold_soft_force: 250.0
+  arm_hold_gain: 0.05
+  arm_hold_force: 250.0
+  arm_hold_velocity_gain: 1.0
+  spawn_on_pedestal: true
+  pedestal_height_m: 0.05
+  pedestal_half_extents_xy: [0.08, 0.08]
+  pedestal_position_xy: [0.40, 0.00]
+max_steps: 220
+frame_skip: 4
+action_scale: 0.05
+action_mode: close_only
+pregrasp_no_collision_steps: 150
+lift_success_z: 0.03
+lift_check_enabled: true
+lift_check_contact_links_min: 4
+lift_check_contact_mode: tips_plus_distal
+lift_check_dz: 0.06
+lift_check_hold_steps: 30
+lift_check_debug: false
+reward_debug_print: true
+overgrip_threshold: 0.90
+overgrip_penalty: 0.20
+close_contact_link_reward: 0.02
+close_com_shift_penalty: 0.70
+close_slip_penalty: 0.40
+close_ang_vel_penalty: 0.02
+close_overgrip_penalty: 0.10
+close_tip_over_penalty: -1.0
+lift_success_reward: 5.0
+lift_fail_penalty: -2.0
+lift_slip_penalty: 1.0
+lift_ang_vel_penalty: 0.05
+lift_tip_over_penalty: -2.0
+max_tilt_rad: 0.8
+object_sampler:
+  shapes: [cylinder, rect_cylinder]
+  height_cm:
+    min: 8.0
+    max: 14.0
+  thickness_cm:
+    min: 2.0
+    max: 7.0
+  mass_kg:
+    min: 0.05
+    max: 0.25
+  lateral_friction:
+    min: 0.25
+    max: 0.75
+spawn:
+  position_xyz: [0.40, 0.00, 0.04]
+  jitter_xyz: [0.001, 0.001, 0.005]
+  yaw_range_deg: [-180, 180]

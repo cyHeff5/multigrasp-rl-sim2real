@@ -1,0 +1,64 @@
+part_id: 3
+part_urdf: C:\Users\leonp\Documents\DFKI\multigrasp-rl-sim2real\sim\assets\benchmark_parts\benchmark_part_3.urdf
+object_pose_world:
+  position_xyz:
+  - 0.8
+  - 0.0
+  - 0.06538929814655157
+  orientation_xyzw:
+  - 0.0
+  - 0.0
+  - 0.0
+  - 1.0
+grasp_points:
+- id: gp_001
+  position_obj_xyz:
+  - -0.000421
+  - 0.000324
+  - 0.0797
+  normal_obj_xyz:
+  - 0.010218
+  - 0.000387
+  - 0.999948
+  tangent_obj_xyz:
+  - 0.999948
+  - -4.0e-06
+  - -0.010218
+  poses:
+    tripod:
+      distance_mm: 35.0
+      twist_deg: -75.0
+- id: gp_002
+  position_obj_xyz:
+  - -0.000421
+  - 0.000324
+  - 0.0797
+  normal_obj_xyz:
+  - 0.010218
+  - 0.000387
+  - 0.999948
+  tangent_obj_xyz:
+  - 0.999948
+  - -4.0e-06
+  - -0.010218
+  poses:
+    power_sphere:
+      distance_mm: 0.0
+      twist_deg: 0.0
+- id: gp_003
+  position_obj_xyz:
+  - 0.018842
+  - 0.000324
+  - -0.006285
+  normal_obj_xyz:
+  - 0.992937
+  - -0.022359
+  - -0.116516
+  tangent_obj_xyz:
+  - 0.022207
+  - 0.99975
+  - -0.002606
+  poses:
+    medium_wrap:
+      distance_mm: 15.0
+      twist_deg: -90.0

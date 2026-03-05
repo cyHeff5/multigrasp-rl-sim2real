@@ -1,0 +1,47 @@
+﻿name: tripod_env
+grasp_type: tripod
+observation: q_measured
+action: delta_q_target
+world:
+  gui: false
+  robot_type: free_hand
+  free_hand_pregrasp_position_xyz: [0.40, 0.00, 0.12]
+  free_hand_pregrasp_rpy_deg: [90.0, 0.0, 90.0]
+  free_hand_constraint_force: 3000.0
+  spawn_on_pedestal: true
+  pedestal_height_m: 0.04
+  pedestal_shape: cylinder
+  pedestal_diameter_m: 0.04
+  pedestal_position_xy: [0.40, 0.00]
+max_steps: 200
+frame_skip: 4
+action_scale: 0.05
+action_mode: close_only
+action_active_joints: [servo0, servo1, servo6, servo7, servo8, servo9]
+pregrasp_no_collision_steps: 150
+pregrasp_hand_reference_yaml: artifacts/hand_reference_points.yaml
+pregrasp_distance_mm: 40.0
+pregrasp_twist_deg: 0.0
+pregrasp_settle_steps: 30
+lift_success_z: 0.03
+lift_check_enabled: true
+lift_check_contact_links_min: 3
+lift_check_dz: 0.06
+lift_check_hold_steps: 30
+lift_check_debug: true
+overgrip_threshold: 0.90
+overgrip_penalty: 0.20
+max_tilt_rad: 0.8
+object_sampler:
+  shapes: [sphere, cube, cylinder]
+  size_cm:
+    min: 2.0
+    max: 5.0
+  mass_kg:
+    min: 0.10
+    max: 0.20
+  lateral_friction: 0.40
+spawn:
+  position_xyz: [0.40, 0.00, 0.04]
+  jitter_xyz: [0.001, 0.001, 0.005]
+  yaw_range_deg: [-180, 180]

@@ -1,0 +1,1 @@
+python tests/manual_test_visualize_hand_reference_planes.py --hand-yaml artifacts/hand_reference_points.yaml

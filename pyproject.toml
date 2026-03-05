@@ -1,0 +1,10 @@
+﻿[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "multigrasp-rl-sim2real"
+version = "0.1.0"
+description = "Pose-specific in-hand grasp RL scaffold for AR10"
+readme = "README.md"
+requires-python = ">=3.10"

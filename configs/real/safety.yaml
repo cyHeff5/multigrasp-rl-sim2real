@@ -1,0 +1,3 @@
+﻿emergency_stop_on_limit: true
+watchdog_timeout_ms: 100
+max_steps_per_episode: 300
